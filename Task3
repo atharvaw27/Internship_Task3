@@ -1,0 +1,84 @@
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from collections import Counter
+from math import sqrt
+
+nltk.download("punkt")
+nltk.download("stopwords")
+
+# Predefined corpus and responses
+corpus = [
+    "What is your name?",
+    "How are you?",
+    "Tell me about natural language processing.",
+    "What is NLTK?",
+    "Goodbye!"
+]
+
+responses = [
+    "I am your friendly NLP Chatbot!",
+    "I'm just a bot, but I'm doing great! How about you?",
+    "Natural Language Processing is a field of AI that focuses on the interaction between computers and humans through language.",
+    "NLTK is a powerful library for NLP that supports tasks like tokenization, parsing, and text classification.",
+    "Goodbye! Have a great day!"
+]
+
+def preprocess_input(text):
+    # Tokenize text into words
+    tokens = word_tokenize(text.lower())
+    # Load English stopwords
+    stop_words = set(stopwords.words("english"))
+    # Filter out stopwords and non-alphabetic tokens
+    filtered_tokens = [word for word in tokens if word.isalpha() and word not in stop_words]
+    return filtered_tokens
+
+# Create a frequency vector
+def vectorize(tokens):
+    return Counter(tokens)
+
+# Calculate cosine similarity
+def cosine_similarity(vec1, vec2):
+    intersection = set(vec1.keys()) & set(vec2.keys())
+    numerator = sum([vec1[x] * vec2[x] for x in intersection])
+    
+    sum1 = sum([vec1[x] ** 2 for x in vec1.keys()])
+    sum2 = sum([vec2[x] ** 2 for x in vec2.keys()])
+    denominator = sqrt(sum1) * sqrt(sum2)
+    
+    if not denominator:
+        return 0.0
+    return float(numerator) / denominator
+
+# Find the best response
+def get_response(user_input, corpus, responses):
+    user_tokens = preprocess_input(user_input)
+    user_vector = vectorize(user_tokens)
+    
+    best_match_idx = -1
+    best_similarity = 0.0
+    
+    for idx, text in enumerate(corpus):
+        corpus_tokens = preprocess_input(text)
+        corpus_vector = vectorize(corpus_tokens)
+        similarity = cosine_similarity(user_vector, corpus_vector)
+        if similarity > best_similarity:
+            best_similarity = similarity
+            best_match_idx = idx
+    
+    return responses[best_match_idx] if best_similarity > 0.2 else "I'm sorry, I didn't understand that."
+
+# Main chatbot function
+def chatbot():
+    print("Chatbot: Hi! I am here to help you. Type 'bye' to exit.")
+    while True:
+        user_input = input("You: ")
+        if user_input.lower() in ["bye", "exit"]:
+            print("Chatbot: Goodbye!")
+            break
+        response = get_response(user_input, corpus, responses)
+        print(f"Chatbot: {response}")
+
+# Run the chatbot
+if __name__ == "__main__":
+    chatbot()
